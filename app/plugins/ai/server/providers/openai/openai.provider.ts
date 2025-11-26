@@ -59,7 +59,22 @@ export class OpenaiProvider {
   }
 
   async generateText(options: OpenaiGenerateTextOptions): Promise<string> {
-    return
+    const messages = this.buildMessages({
+      content: options.prompt,
+      attachmentUrls: options.attachmentUrls,
+      context: options.context,
+      history: options.history,
+    });
+
+    const completion = await this.api.chat.completions.create({
+      model: OpenaiModel.DEFAULT,
+      messages,
+    });
+
+    const text = completion.choices?.[0]?.message?.content;
+    if (!text) throw new Error('No response from AI.');
+
+    return text;
   }
 
   async generateJson<
@@ -84,5 +99,19 @@ export class OpenaiProvider {
 
   async fromTextToAudio(text: string): Promise<Buffer> {
     return
+  }
+
+  private buildMessages(options: BuildMessageOptions) {
+    const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [];
+
+    if (options.context) {
+      messages.push({ role: 'system', content: options.context });
+    }
+
+    options.history?.forEach(msg => messages.push({ role: 'user', content: msg }));
+
+    messages.push({ role: 'user', content: options.content });
+
+    return messages;
   }
 }

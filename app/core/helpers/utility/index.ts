@@ -74,4 +74,16 @@ export namespace Utility {
       }, delay)
     } as FunctionType
   }
+
+  export function sanitiseText(text: string): string {
+    if (!text) return '';
+
+    let s = text.trim();
+
+    s = s.replace(/\s+/g, ' ');
+    s = s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    s = s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]+/g, '');
+
+    return s;
+  }
 }
