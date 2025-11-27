@@ -35,7 +35,7 @@ export class PdfProvider {
         }
     }
 
-    async generatePdfFromHtml(conversation: { role?: 'user' | 'assistant'; content?: string }[], title?: string): Promise<string> {
+    async generatePdfFromProvider(conversation: { role?: 'user' | 'assistant'; content?: string }[], title?: string): Promise<string> {
         if (!this.isActive()) throw new Error('PDF provider is not configured.');
 
         const templateId = process.env.PDF_TEMPLATE_ID;
@@ -70,15 +70,19 @@ export class PdfProvider {
         const created = await createPdfResponse.json();
 
         const docId = created?.document?.id;
-        // Break into separate function from here down, KISS
         if (!docId) throw new Error('PDF provider did not return a document ID.');
+        const downloadUrl: string = await this.waitForDownload(docId);
+
+        return downloadUrl;
+    }
+
+    private async waitForDownload(docId: string): Promise<string> {
         const checkUrl = `${this.apiUrl}/${docId}`;
 
         let downloadUrl: string | null = null;
 
-        for (let attempt = 0; attempt < 10; attempt++) {
-            await new Promise(res => setTimeout(res, 500));
-
+        const timeout = Date.now() + 5000;
+        while (Date.now() < timeout) {
             const statusResponse = await fetch(checkUrl, {
                 headers: {
                     'Authorization': `Bearer ${this.apiKey}`
@@ -93,11 +97,33 @@ export class PdfProvider {
             const statusJson = await statusResponse.json();
             downloadUrl = statusJson?.document?.download_url ?? null;
 
-            if (downloadUrl) break;
+            if (downloadUrl) return downloadUrl;
         }
 
-        if (!downloadUrl) throw new Error('PDF provider did not generate the PDF in time.');
+        // for (let attempt = 0; attempt < 10; attempt++) {
+        //     await new Promise(res => setTimeout(res, 500));
 
-        return downloadUrl;
+        //     const statusResponse = await fetch(checkUrl, {
+        //         headers: {
+        //             'Authorization': `Bearer ${this.apiKey}`
+        //         }
+        //     });
+
+        //     if (!statusResponse.ok) {
+        //         const text = await statusResponse.text().catch(() => '');
+        //         throw new Error(`PDF provider status error ${statusResponse.status}: ${text}`);
+        //     }
+
+        //     const statusJson = await statusResponse.json();
+        //     downloadUrl = statusJson?.document?.download_url ?? null;
+
+        //     if (downloadUrl) break;
+        // }
+
+        if (!downloadUrl) throw new Error('PDF provider did not generate the PDF in time.');
+    }
+
+    private async createPdfRequest() {
+        
     }
 }

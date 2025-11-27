@@ -9,7 +9,8 @@ type ChatMessage = { role: 'user' | 'assistant'; content: string };
 export default function ChatRoute() {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [loadingMessage, setLoadingMessage] = useState(false);
+    const [loadingPdf, setLoadingPdf] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
     const sendMessageMutation = Api.chat.sendMessage.useMutation();
@@ -26,7 +27,7 @@ export default function ChatRoute() {
         const userMessage: ChatMessage = { role: 'user', content: rawText };
         setMessages((prev) => [...prev, userMessage]);
         setInput('');
-        setLoading(true);
+        setLoadingMessage(true);
 
         let assistantResponse: string = 'Unable to get AI response.';
 
@@ -41,12 +42,12 @@ export default function ChatRoute() {
             assistantResponse = 'Unable to reach AI. Try again later.';
         } finally {
             setMessages((prev) => [...prev, { role: 'assistant', content: assistantResponse }]);
-            setLoading(false);
+            setLoadingMessage(false);
         }
     };
 
     const handleCreatePdf = async () => {
-        setLoading(true);
+        setLoadingPdf(true);
 
         let pdfDownloadUrl: string = 'Unable to generate PDF.';
 
@@ -54,13 +55,14 @@ export default function ChatRoute() {
             const response = await generatePdfMutation.mutateAsync({
                 conversation: messages,
             });
+            window.open(response.pdfDownloadUrl, '_blank');
             pdfDownloadUrl = response.pdfDownloadUrl;
         } catch (error) {
             console.error('PDF generation failed.', error);
             pdfDownloadUrl = 'Unable to generate PDF. Try again later.';
         } finally {
             setMessages((prev) => [...prev, { role: 'assistant', content: pdfDownloadUrl }]);
-            setLoading(false);
+            setLoadingPdf(false);
         }
     }
 
@@ -125,20 +127,20 @@ export default function ChatRoute() {
                             placeholder="Type your question for the legal assistant..."
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            disabled={loading}
+                            disabled={loadingMessage}
                             allowClear
-                            suffix={loading ? <Spin /> : null}
+                            suffix={loadingMessage ? <Spin /> : null}
                         />
                     </Col>
 
                     <Col>
-                        <Button type="primary" onClick={handleSendMessage} loading={loading}>
+                        <Button type="primary" onClick={handleSendMessage} loading={loadingMessage}>
                             Send
                         </Button>
                     </Col>
 
                     <Col>
-                        <Button icon={<FilePdfOutlined />} onClick={handleCreatePdf} loading={loading}>
+                        <Button icon={<FilePdfOutlined />} onClick={handleCreatePdf} loading={loadingPdf}>
                             PDF
                         </Button>
                     </Col>

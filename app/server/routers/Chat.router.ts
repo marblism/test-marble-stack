@@ -14,10 +14,18 @@ export const ChatRouter = Trpc.createRouter({
     .mutation(async ({ ctx, input }) => {
         if (!openaiProvider.isActive()) {
             console.error('AI provider is not active. Check SERVER_OPENAI_API_KEY.')
-            throw new Error('AI provider is not availabable. Contact admin.');
+            throw new Error('AI provider is not available. Contact admin.');
         }
 
         const prompt: string = Utility.sanitiseText(input.message);
+
+        await ctx.database.message.create({
+            data: {
+                role: 'user',
+                content: prompt,
+                userId: ctx.session.user.id,
+            }
+        });
 
         let aiResponse: string;
 
@@ -31,13 +39,21 @@ export const ChatRouter = Trpc.createRouter({
             aiResponse = 'Sorry, the AI failed to generate a response. Please try again.';
         }
 
+        await ctx.database.message.create({
+            data: {
+                role: 'assistant',
+                content: aiResponse,
+                userId: ctx.session.user.id,
+            }
+        });
+
         return { response: aiResponse?.toString().trim() || 'No response from AI.' };
     }),
     generatePdf: Trpc.procedure
     .input(z.object({ conversation: z.array(z.object({ role: z.enum(['user','assistant']), content: z.string() })) , title: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
         const { conversation, title } = input;
-        const pdfDownloadUrl: string = await pdfProvider.generatePdfFromHtml(conversation, title);
+        const pdfDownloadUrl: string = await pdfProvider.generatePdfFromProvider(conversation, title);
         
         return { pdfDownloadUrl: pdfDownloadUrl };
     }),

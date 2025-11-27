@@ -21,6 +21,7 @@ model User {
     updatedAt         DateTime           @updatedAt @default(now())
 
     organizationRoles OrganizationRole[]
+    messages          Message[]
 
     @@auth()
     @@allow("all", auth().id == this.id)
@@ -67,3 +68,20 @@ model OrganizationRole {
     @@allow('delete', auth() == user)
 }
 
+model Message {
+    id            String       @id @default(uuid())
+    content       String?
+    role          String?
+    userId        String       @default(auth().id)
+    user          User         @relation(fields: [userId], references: [id])
+    createdAt     DateTime     @default(now())
+
+    @@index([userId, createdAt])
+
+    @@allow('create', auth() != null)
+    @@allow('read', user == auth())
+    @@allow('update', user == auth())
+    @@allow('delete', user == auth())
+
+    @@allow('all', auth().globalRole == 'ADMIN')
+}

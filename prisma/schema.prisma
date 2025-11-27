@@ -37,6 +37,7 @@ model User {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @default(now()) @updatedAt()
   organizationRoles OrganizationRole[]
+  messages          Message[]
 }
 
 /// @@allow('all', auth().globalRole == 'ADMIN')
@@ -66,4 +67,20 @@ model OrganizationRole {
   user           User         @relation(fields: [userId], references: [id])
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+/// @@allow('create', auth() != null)
+/// @@allow('read', user == auth())
+/// @@allow('update', user == auth())
+/// @@allow('delete', user == auth())
+/// @@allow('all', auth().globalRole == 'ADMIN')
+model Message {
+  id        String   @id() @default(uuid())
+  content   String?
+  role      String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
