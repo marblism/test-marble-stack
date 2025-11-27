@@ -57,4 +57,14 @@ export const ChatRouter = Trpc.createRouter({
         
         return { pdfDownloadUrl: pdfDownloadUrl };
     }),
+    getAllMessages: Trpc.procedure
+    .mutation(async ({ ctx }) => {
+        const userId = ctx.session.user.id;
+
+        const messages = await ctx.database.message.findMany({ 
+            where: { userId: userId }
+        });
+
+        return { conversatrion: messages };
+    }),
 });

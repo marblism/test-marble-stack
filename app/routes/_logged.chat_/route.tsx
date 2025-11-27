@@ -3,6 +3,7 @@ import { Api } from "~/core/trpc";
 import { Typography, Divider, Layout, List, Input, Button, Avatar, Spin, Row, Col } from 'antd';
 import { UserOutlined, RobotOutlined, FilePdfOutlined } from '@ant-design/icons';
 import { Utility } from "~/core/helpers/utility";
+import { useUserContext } from "~/core/context";
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
@@ -15,10 +16,27 @@ export default function ChatRoute() {
 
     const sendMessageMutation = Api.chat.sendMessage.useMutation();
     const generatePdfMutation = Api.chat.generatePdf.useMutation();
+    const getAllMessagesMutation = Api.chat.getAllMessages.useMutation();
+
+    useEffect(() => {
+        handleGetAllMessages();
+    }, []);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
+
+    const handleGetAllMessages = async () => {
+        try {
+            const response  = await getAllMessagesMutation.mutateAsync();
+            const conversation = response.conversatrion;
+            setMessages((prev) => [...prev, ...conversation]);
+        } catch (error) {
+
+        } finally {
+
+        }
+    }
 
     const handleSendMessage = async () => {
         const rawText = input.trim();
