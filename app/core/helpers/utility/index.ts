@@ -80,8 +80,11 @@ export namespace Utility {
 
     let s = text.trim();
 
+    // Replace any sequence of whitespace with a single space
     s = s.replace(/\s+/g, ' ');
+    // Converts these characters to HTML entities to prevent HTML injection or breaking HTML
     s = s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // Strips non-printable ASCII control characters from the string
     s = s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]+/g, '');
 
     return s;
