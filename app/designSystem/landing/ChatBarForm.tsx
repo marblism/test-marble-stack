@@ -1,48 +1,42 @@
 import { InputHTMLAttributes, useState } from 'react'
 import { Api } from '~/core/trpc'
 
-interface ChatBarFormProps extends InputHTMLAttributes<HTMLInputElement> {}
+interface ChatBarFormProps extends InputHTMLAttributes<HTMLInputElement> {
+    onNewMessage: (message: any) => void
+}
 
 /**
  * Form component for the chat input bar, allowing users to type and submit messages.
  */
 export const ChatBarForm = ({
   className,
+  onNewMessage,
   ...remainingProps
 }: ChatBarFormProps) => {
-    const login = Api.authentication.login.useMutation()
+    const { mutateAsync:login } = Api.authentication.login.useMutation();
+    const { mutateAsync:generateText } = Api.ai.generateText.useMutation();
+
+    const handleLogin = async () => {
+        await login({
+            email: 'test@test.com',
+            password: 'password',
+        });
+    };
     
-    const generateText = Api.ai.generateText.useMutation()
+    const handleGenerateText = async (promptMessage: string) => {
+        return generateText({prompt: promptMessage})
+    };
 
     const [message, setMessage] = useState('')
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        onNewMessage({ ai: false, text: message });
         event.preventDefault()
-        const user = await login.mutateAsync({
-            email: 'test@test.com',
-            password: 'password',
-        }, {
-            onSuccess: (data) => {
-                console.log('Login successful:', data)}
-        });
-
-        console.log(JSON.stringify(user))
-        console.log(message)
-        generateText.context = {
-            userId: '12345',
-            sessionId: 'abcde',
-        }
-        console.log(generateText.context)
-        await generateText.mutateAsync({
-            prompt: message,
-            attachmentUrls: [],
-            provider: 'openai'
-        }).then((response) => {
-            console.log('AI response:', response)
-        }).catch((error) => {
-            console.error('Error generating text:', error)
-        });
+        await handleLogin();
         // Handle form submission logic here
+        await handleGenerateText(message).then((response) => {
+            onNewMessage({ ai: true, text: response.answer });
+        });
         setMessage('');
     }
 
