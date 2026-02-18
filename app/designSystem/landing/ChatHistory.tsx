@@ -2,6 +2,7 @@ import { HTMLAttributes } from 'react'
 import { DesignSystemUtility } from '../helpers/utility'
 import LandingButton from './LandingButton'
 import { LandingAvatar } from './LandingAvatar'
+import { jsPDF } from 'jspdf'
 
 interface Props extends HTMLAttributes<HTMLElement> {
   messages: MessageHistory[]
@@ -30,10 +31,15 @@ export const ChatHistory: React.FC<Props> = ({
   const handleDownload = (index) => {
     const pdfFile = messages[index].pdfFile;
     if (pdfFile) {
+      const doc = new jsPDF();
+      doc.text(pdfFile, 10, 10);
+      const pdfBlob = doc.output('blob');
+      const url = window.URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
-      link.href = pdfFile;
-      link.download = `file-${index}.pdf`;
+      link.href = url;
+      link.target = '_blank';
       link.click();
+      window.URL.revokeObjectURL(url);
     }
   }
 
@@ -44,7 +50,9 @@ export const ChatHistory: React.FC<Props> = ({
     >
       <div className="max-w-7xl mx-auto">
         <h1 className='text-center font-bold text-2xl'>{title}</h1>
-        <div className="bg-white p-8 md:px-20 md:py-20 mt-10 mx-auto max-w-5xl rounded-lg flex flex-col overflow-y-scroll max-h-[60vh] border-2 border-solid border-primary-100">
+        <div 
+        id='chat-history'
+        className="bg-white p-8 md:px-20 md:py-20 mt-10 mx-auto max-w-5xl rounded-lg flex flex-col overflow-y-scroll max-h-[60vh] border-2 border-solid border-primary-100">
           {messages.map((message,index) => (
               <div key={index} className={message.ai ? 'flex items-start gap-4 mb-4 items-center' : 'flex items-end gap-4 mb-4 flex-row-reverse items-center'}>
                 <LandingAvatar src={message.ai

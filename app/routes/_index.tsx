@@ -19,14 +19,12 @@ export default function LandingPage() {
       return [...chats]
     });
     console.log('Updated messages:', messages);
+    document.getElementById('chat-history')?.scrollTo(0, document.getElementById('chat-history')?.scrollHeight || 0);
     // Here you can add the logic to send the message to your AI service and update the chat history with the response.
   }
 
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { ai: true, text: 'Hello! How can I assist you today?' },
-    { ai: false, text: 'I need help with my legal case.' },
-    { ai: true, text: 'Sure! Can you provide more details about your case?' },
-    { ai: false, text: 'I was involved in a car accident and I want to know my legal options.' },
+    { ai: true, text: 'Hello! How can I assist you today?' }
   ])
 
   return (
