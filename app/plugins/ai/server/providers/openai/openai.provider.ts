@@ -80,12 +80,21 @@ export class OpenaiProvider {
     const { content, context, history } = options || {};
     const messages: Message[] = [];
 
-    const promptSystem = {
-            role: 'system',
-            content: `${context}`.trim(),
-        }
+    const promptSystem: Message = {
+      role: 'system',
+      content: `${context}`.trim(),
+    }
 
-    messages.push(promptSystem as Message)
+    const guideline: Message = {
+      role: 'system',
+      content: `
+        If the user request a pdf file, you should answer with 'Here is the pdf!',
+        and then with the potential content of the pdf encapsulated with <pdf></pdf>.
+      `
+    }
+
+    messages.push(promptSystem as Message);
+    messages.push(guideline as Message);
     if(history){ messages.push(...history) }
     if(content) {
       messages.push({

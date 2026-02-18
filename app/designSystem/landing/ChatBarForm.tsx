@@ -32,12 +32,17 @@ export const ChatBarForm = ({
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         onNewMessage({ ai: false, text: message });
         event.preventDefault()
+        setMessage('');
         await handleLogin();
         // Handle form submission logic here
         await handleGenerateText(message).then((response) => {
-            onNewMessage({ ai: true, text: response.answer });
+            if(response.answer.includes('<pdf>') && response.answer.includes('</pdf>')) {
+                const pdfFile = response.answer.split('<pdf>')[1].split('</pdf>')[0];
+                onNewMessage({ ai: true, text: 'Here is the pdf!', pdfFile });
+            } else {
+                onNewMessage({ ai: true, text: response.answer });
+            }
         });
-        setMessage('');
     }
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,11 +50,11 @@ export const ChatBarForm = ({
     };
 
     return (
-        <form onSubmit={handleSubmit} className='flex flex-row max-w-5xl md:mx-auto mx-4 lg:mx-auto'>
+        <form onSubmit={handleSubmit} className='flex flex-row max-w-5xl md:mx-auto mx-4 lg:mx-auto place-self-center'>
             <input
                 value={message}
                 onChange={handleChange}
-                className=" px-4 rounded-l-full border-2 border-solid border-primary-100 flex flex-col items-center w-full"
+                className=" px-4 rounded-l-full border-2 border-solid border-primary-100 flex flex-col min-w-[50vw]"
                     {...remainingProps}
                 type='text'
             />
