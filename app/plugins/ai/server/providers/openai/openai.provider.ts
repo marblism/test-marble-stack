@@ -1,8 +1,12 @@
+import { response } from 'express'
 import { ReadStream } from 'fs'
 import OpenaiSDK from 'openai'
 import { zodResponseFormat } from 'openai/helpers/zod'
 import { ParsedChatCompletion } from 'openai/resources/beta/chat/completions'
 import { z, ZodType } from 'zod'
+
+type Message = OpenaiSDK.Chat.Completions.ChatCompletionMessageParam
+type Response = OpenaiSDK.Chat.Completions.ChatCompletion
 
 export type OpenaiGenerateTextOptions = {
   prompt: string
@@ -22,7 +26,7 @@ enum OpenaiModel {
 type BuildMessageOptions = {
   content: string
   attachmentUrls?: string[]
-  history?: string[]
+  history?: Message[]
   context?: string
 }
 
@@ -59,7 +63,61 @@ export class OpenaiProvider {
   }
 
   async generateText(options: OpenaiGenerateTextOptions): Promise<string> {
-    return
+    const {
+      prompt,
+      attachmentUrls,
+      history,
+      context,
+    } = options
+    
+    const messages : Message[] = this.buildMessages();
+    const response : Response = await this.createResponse(options, messages); 
+    const content = response.choices[0].message?.content as string
+    return content;
+  }
+
+  private buildMessages(options?: BuildMessageOptions): Message[] {
+    const { content, context, history } = options || {};
+    const messages: Message[] = [];
+
+    const promptSystem: Message = {
+      role: 'system',
+      content: `${context}`.trim(),
+    }
+
+    const guideline: Message = {
+      role: 'system',
+      content: `
+        If the user request a pdf file, you should answer with 'Here is the pdf!',
+        and then with the potential content of the pdf encapsulated with <pdf></pdf>.
+      `
+    }
+
+    messages.push(promptSystem as Message);
+    messages.push(guideline as Message);
+    if(history){ messages.push(...history) }
+    if(content) {
+      messages.push({
+        role: 'user',
+        content: [ {type:'text', text: `${content}`.trim()} ]
+      } as Message)
+    }
+
+    return messages 
+  }
+
+  private createResponse(options: OpenaiGenerateTextOptions, messages: Message[]): Promise<Response> {
+    const { prompt } = options
+    return this.api.chat.completions.create({
+      model: OpenaiModel.DEFAULT,
+      messages: [
+        ...messages,
+        {
+          role: 'user',
+          content: `${prompt}`.trim(),
+        } as Message,
+      ]
+    })
   }
 
   async generateJson<

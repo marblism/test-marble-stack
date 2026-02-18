@@ -11,9 +11,9 @@ interface LandingAvatarProps extends ImgHTMLAttributes<HTMLImageElement> {
 export const LandingAvatar = ({
   className,
   src,
-  width = 128,
-  height = 128,
-  size = 'medium',
+  width = 256,
+  height = 256,
+  size = 'large',
   ...remainingProps
 }: LandingAvatarProps) => {
   return (
